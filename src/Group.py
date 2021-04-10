@@ -53,6 +53,17 @@ class Group:
         in_group.susceptible -= number
         out_group.add_people(number)
 
+    
+    def get_cases_vac1_ready(self):
+        return self.vac1_ready.get_cases()
+
+    def get_cases_vac2_ready(self):
+        return [subgroup.get_cases() for subgroup in list(self.vac2_ready.values())]
+
+
+
+    # get methods for summary
+
     def get_cases(self):
         total_cases = self.vac1_ready.get_cases()
         total_cases += sum([subgroup.get_cases() for subgroup in list(self.in_process.values())])
@@ -80,6 +91,9 @@ class Group:
         total_deaths += sum([subgroup.deaths for subgroup in list(self.vac2_ready.values())])
         total_deaths += sum([subgroup.deaths for subgroup in list(self.done.values())])
         return total_deaths
+
+
+    # getpossible vaccinatable count
 
     def get_vaccinatable(self):
         vac2_ready_dict = {}

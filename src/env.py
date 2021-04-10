@@ -1,5 +1,7 @@
 import sys
 import os
+
+from numpy.lib.npyio import NpzFile
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from Group import Group, Vaccine, Vaccine_Shipment
 
@@ -26,7 +28,7 @@ class VaccinationEnvironment:
                 config["prob_recovery"],
                 susceptible,
                 config["starting_cases"][index],
-                possible_vaccines = [JOHNSON, BIONTECH]
+                possible_vaccines = [JOHNSON]
             ))
 
             self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "deaths"]))
@@ -34,12 +36,40 @@ class VaccinationEnvironment:
 
 
         self.vaccination_schedule = vaccination_schedule
+        self.config = config
         self.total_people = sum(config["group_sizes"])
 
         self.time_step = 0
+        self.max_time_steps=config["max_time_steps"]
 
 
         # add vacin shipping schedule
+
+    def reset(self, new_config=None):
+        config = new_config if new_config else self.config
+        self.groups = []
+        self.group_sizes = config["group_sizes"]
+        self.groups_history = []
+        for index, group_name in enumerate(config["groups"]):
+            susceptible = config["group_sizes"][index] - config["starting_cases"][index]
+            self.groups.append(
+                Group(group_name,
+                config["num_contacts"],
+                config["prob_transmission"],
+                config["prob_severe"], 
+                config["prob_death"],
+                config["prob_recovery"],
+                susceptible,
+                config["starting_cases"][index],
+                possible_vaccines = [JOHNSON]
+            ))
+
+            self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "deaths"]))
+
+        self.total_people = sum(config["group_sizes"])
+        self.time_step = 0
+
+
 
     def get_vaccines(self):
         return [Vaccine_Shipment(globals()[vaccine_name.upper()], self.vaccination_schedule[vaccine_name][index]) for index, vaccine_name in enumerate(self.vaccination_schedule.keys())]
@@ -66,6 +96,11 @@ class VaccinationEnvironment:
 
         self.save_step()
         self.time_step += 1
+        done = False
+        if self.time_step >= self.max_time_steps:
+            self.reset()
+            done = True
+        return self.get_info(False), done
 
     def save_step(self):
         info = self.get_info()
@@ -76,6 +111,9 @@ class VaccinationEnvironment:
     def get_total_cases(self):
         return sum([group.get_cases() for group in self.groups])
     # vaccines
+
+    def get_cases(self):
+        return {group.name: [group.get_cases_vac1_ready()] + group.get_cases_vac2_ready() for group in self.groups}
 
     def get_info(self, header=True):
         info={"description": "The data is sorted by [susceptible, active_cases, recovered, deaths]"} if header else {}

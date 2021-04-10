@@ -29,8 +29,9 @@ vaccination_plan = Vaccination_Plan(JOHNSON, 100, 0)
 for i in range(100):
     env.step([[vaccination_plan]], print_warnings=False)
     #print(env.get_info(header=False))
+    print(env.get_cases())
 
-env.plot_ratio("deaths")
+#env.plot_ratio("deaths")
 
 # [group1, grou2, ...]
 # group1 = [vac1, vac2]
