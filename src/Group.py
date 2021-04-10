@@ -16,10 +16,10 @@ class Group:
         self.vac2_ready = {}
         self.done = {}
 
-    def step(self, ratio_cases, vaccine_shipments=None):
+    def step(self, ratio_cases, vaccination_plan=None):
         # vaccinate
-        if vaccine_shipments:
-            for shipment in vaccine_shipments:
+        if vaccination_plan:
+            for shipment in vaccination_plan:
                 # distribute first vaccines
                 if shipment.first_vaccines > 0:
                     if not shipment.vaccine.name in self.in_process:
@@ -58,6 +58,20 @@ class Group:
         total_cases += sum([subgroup.get_cases() for subgroup in list(self.vac2_ready.values())])
         total_cases += sum([subgroup.get_cases() for subgroup in list(self.done.values())])
         return total_cases
+
+    def get_recovered(self):
+        total_recovered = self.vac1_ready.recovered
+        total_recovered += sum([subgroup.recovered for subgroup in list(self.in_process.values())])
+        total_recovered += sum([subgroup.recovered for subgroup in list(self.vac2_ready.values())])
+        total_recovered += sum([subgroup.recovered for subgroup in list(self.done.values())])
+        return total_recovered
+
+    def get_susceptible(self):
+        total_susceptible = self.vac1_ready.susceptible
+        total_susceptible += sum([subgroup.susceptible for subgroup in list(self.in_process.values())])
+        total_susceptible += sum([subgroup.susceptible for subgroup in list(self.vac2_ready.values())])
+        total_susceptible += sum([subgroup.susceptible for subgroup in list(self.done.values())])
+        return total_susceptible
 
 
 
@@ -121,11 +135,16 @@ class Processing_Group(Subgroup):
 
 
 
-class Vaccine_Shipment:
+class Vaccination_Plan:
     def __init__(self, vaccine, first_vaccines, second_vaccines):
         self.vaccine = vaccine
         self.first_vaccines = first_vaccines
         self.second_vaccines = second_vaccines
+
+class Vaccine_Shipment:
+    def __init__(self, vaccine, num):
+        self.num = num
+        self.vaccine = vaccine
 
 class Vaccine:
     def __init__(self, name, effectiveness, prob_severe, prob_death, processing_time):
