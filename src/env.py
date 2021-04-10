@@ -5,6 +5,7 @@ from Group import Group, Vaccine, Vaccine_Shipment
 
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 JOHNSON = Vaccine("Johnson", 0.95, 0.05, 0.01, 10)
 BIONTECH = Vaccine("Biontech", 0.95, 0.05, 0.01, 15)
@@ -23,10 +24,12 @@ class VaccinationEnvironment:
                 config["prob_death"],
                 config["prob_recovery"],
                 susceptible,
-                config["starting_cases"][index]
+                config["starting_cases"][index],
+                possible_vaccines = [JOHNSON, BIONTECH]
             ))
 
-            self.groups_history.append(pd.DataFrame(["susceptible", "cases", "recovered", "dead"]))
+            self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "dead"]))
+
 
 
         self.vaccination_schedule = vaccination_schedule
@@ -41,13 +44,14 @@ class VaccinationEnvironment:
         return [Vaccine_Shipment(globals()[vaccine_name.upper()], self.vaccination_schedule[vaccine_name][index]) for index, vaccine_name in enumerate(self.vaccination_schedule.keys())]
     # returns next vaccine objects
 
-    def step(self, vaccines=None, check=True):
+    def step(self, vaccines=None, print_warnings=True):
         ratio = self.get_total_cases()/self.total_people
 
         # look if dim match
         last_index = len(self.groups)
         if len(vaccines) != last_index:
-            print("Warning: Mismatch between vaccination plan and groups.")
+            if print_warnings:
+                print("Warning: Mismatch between vaccination plan and groups.")
             last_index = len(vaccines)
 
         self.check_vaccination_plan(vaccines)
@@ -65,14 +69,15 @@ class VaccinationEnvironment:
     def save_step(self):
         info = self.get_info()
         for index, group in enumerate(self.groups):
-            self.groups_history[index] = self.groups_history[index].append(info[group.name])
+            self.groups_history[index] = self.groups_history[index].append(pd.DataFrame([info[group.name]], columns=["susceptible", "cases", "recovered", "dead"]), ignore_index=True)
+
 
     def get_total_cases(self):
         return sum([group.get_cases() for group in self.groups])
     # vaccines
 
-    def get_info(self):
-        info={"description": "The data is sorted by [susceptible, active_cases, recovered, deaths]"}
+    def get_info(self, header=True):
+        info={"description": "The data is sorted by [susceptible, active_cases, recovered, deaths]"} if header else {}
         for group in self.groups:
             info[group.name] = [group.get_susceptible(), group.get_cases(), group.get_recovered(), group.get_deaths()]
         return info
@@ -101,7 +106,11 @@ class VaccinationEnvironment:
         return self.groups
 
     def plot(self):
-        pass
+        plot_count = len(self.groups)
+        fig, axs = plt.subplots(plot_count)
+        for index, group in enumerate(self.groups):
+            print(self.groups_history[index]["susceptible"])
+            pd.Series.plot(self.groups_history[index]["susceptible"], ax = axs[index])
     # plots current status
 
     def save(self):

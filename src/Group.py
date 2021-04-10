@@ -2,7 +2,7 @@ import random
 
 class Group:
     def __init__(self, name, num_contacts, prob_transmission, prob_severe, prob_death, prob_recovery, susceptible,
-                 infectious=0, recovered=0, severe_cases=0):
+                 infectious=0, recovered=0, severe_cases=0, possible_vaccines=[]):
         # immutable group variables
         self.name = name
         self.prob_transmission_group = prob_transmission
@@ -16,6 +16,12 @@ class Group:
         self.in_process = {}
         self.vac2_ready = {}
         self.done = {}
+        for vaccine in possible_vaccines:
+            self.in_process[vaccine.name] = Processing_Group(self, 0, 0, 0, 0, vaccine)
+            self.vac2_ready[vaccine.name] = Subgroup(self, 0, 0, 0, 0, vaccine)
+            self.done[vaccine.name] = Subgroup(self, 0, 0, 0, 0, vaccine)
+
+
 
     def step(self, ratio_cases, vaccination_plan=None):
         # vaccinate
@@ -23,14 +29,10 @@ class Group:
             for shipment in vaccination_plan:
                 # distribute first vaccines
                 if shipment.first_vaccines > 0:
-                    if not shipment.vaccine.name in self.in_process:
-                        self.in_process[shipment.vaccine.name] = Processing_Group(self, 0, 0, 0, 0, shipment.vaccine)
                     self.move(self.vac1_ready, self.in_process[shipment.vaccine.name], min(shipment.first_vaccines, self.vac1_ready.susceptible))
 
                 # distribute the second vaccines
                 if shipment.second_vaccines > 0:
-                    if not shipment.vaccine.name in self.done:
-                        self.done[shipment.vaccine.name] = Subgroup(self, 0, 0, 0, 0, shipment.vaccine)
                     self.move(self.vac2_ready[shipment.vaccine.name], self.done[shipment.vaccine.name], min(shipment.second_vaccines, self.vac2_ready[shipment.vaccine.name].susceptible))
 
 
@@ -38,8 +40,6 @@ class Group:
         self.vac1_ready.step(ratio_cases)
         for subgroup in self.in_process.values():
             num_to_move = subgroup.step(ratio_cases)
-            if not subgroup.vaccine.name in self.vac2_ready:
-                self.vac2_ready[subgroup.vaccine.name] = Subgroup(self, 0, 0, 0, 0, subgroup.vaccine)
             self.move(subgroup, self.vac2_ready[subgroup.vaccine.name], min(num_to_move, subgroup.susceptible))
         for subgroup in self.vac2_ready.values():
             subgroup.step(ratio_cases)

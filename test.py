@@ -25,7 +25,9 @@ vaccines = env.get_vaccines()
 print(env.get_vaccinatable())
 
 vaccination_plan = (Vaccination_Plan(JOHNSON, 10, 0))
-for i in range(100):
-    env.step([[vaccination_plan]])
+for i in range(10):
+    env.step([[vaccination_plan]], print_warnings=False)
+    #print(env.get_info(header=False))
 
+#env.plot()
 
