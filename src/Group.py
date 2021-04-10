@@ -1,9 +1,10 @@
 import random
 
 class Group:
-    def __init__(self, num_contacts, prob_transmission, prob_severe, prob_death, prob_recovery, susceptible,
+    def __init__(self, name, num_contacts, prob_transmission, prob_severe, prob_death, prob_recovery, susceptible,
                  infectious=0, recovered=0, severe_cases=0):
         # immutable group variables
+        self.name = name
         self.prob_transmission_group = prob_transmission
         self.prob_severe_group = prob_severe
         self.prob_death_group = prob_death
@@ -73,7 +74,12 @@ class Group:
         total_susceptible += sum([subgroup.susceptible for subgroup in list(self.done.values())])
         return total_susceptible
 
-
+    def get_deaths(self):
+        total_deaths = self.vac1_ready.deaths
+        total_deaths += sum([subgroup.deaths for subgroup in list(self.in_process.values())])
+        total_deaths += sum([subgroup.deaths for subgroup in list(self.vac2_ready.values())])
+        total_deaths += sum([subgroup.deaths for subgroup in list(self.done.values())])
+        return total_deaths
 
 class Subgroup:
     def __init__(self, parent, susceptible, infectious=0, recovered=0, severe_cases=0, vaccine=None):

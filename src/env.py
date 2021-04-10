@@ -1,17 +1,18 @@
-from Group import Group, Vaccine, Vaccine_Shipment
+from src.Group import Group, Vaccine, Vaccine_Shipment
 import pandas as pd
 
-JOHNSONN = Vaccine("Johnsonn", 0.95, 0.05, 0.01)
-BIONTECH = Vaccine("Biontech", 0.95, 0.05, 0.01)
+JOHNSON = Vaccine("Johnsonn", 0.95, 0.05, 0.01, 10)
+BIONTECH = Vaccine("Biontech", 0.95, 0.05, 0.01, 15)
 
 class VaccinationEnvironment:
     def __init__(self, config, vaccination_schedule):
         self.groups = []
         self.groups_history = []
-        for index, group in enumerate(config["groups"]):
+        for index, group_name in enumerate(config["groups"]):
             susceptible = config["group_sizes"][index] - config["starting_cases"][index]
             self.groups.append(
-                Group(config["num_contacts"],
+                Group(group_name,
+                config["num_contacts"],
                 config["prob_transmission"],
                 config["prob_severe"], 
                 config["prob_death"],
@@ -20,7 +21,7 @@ class VaccinationEnvironment:
                 config["starting_cases"][index]
             ))
 
-            self.groups_history.append(pd.DataFrame("susceptible"))
+            self.groups_history.append(pd.DataFrame(["susceptible", "cases", "recovered", "dead"]))
 
 
         self.vacination_schedule = vaccination_schedule
@@ -41,13 +42,24 @@ class VaccinationEnvironment:
         for index, vaccine in enumerate(vaccines):
             self.groups[index].step(ratio, vaccine)
 
+        self.save_step()
+
+    def save_step(self):
+        info = self.get_info()
+        for index, group in enumerate(self.groups):
+            self.groups_history[index] = self.groups_history[index].append(info[group.name])
+
     def get_total_cases(self):
         return sum([group.get_cases() for group in self.groups])
     # vaccines
 
     def get_info(self):
-        pass
+        info={"description": "The data is sorted by [susceptible, active_cases, recovered, deaths]"}
+        for group in self.groups:
+            info[group.name] = [group.get_susceptible(), group.get_cases(), group.get_recovered(), group.get_deaths()]
+        return info
     # returns general information like current rates for group ...
+
 
     def get_groups(self):
         return self.groups
@@ -61,19 +73,3 @@ class VaccinationEnvironment:
         # saves history
 
 
-
-config = {
-    "groups": ["20s", "30s", "40s"],
-    "starting_cases": [100, 100, 100],
-    "group_sizes": [1000, 1000, 1000],
-    "num_contacts": 4,
-    "prob_severe": 0.1,
-    "prob_death": 0.1,
-    "prob_recover": 0.1,
-}
-
-
-vacination_schedule = {
-    "Johnson": [10]*1000,
-    "Biontech": [0]*100 + [15]*900
-}
