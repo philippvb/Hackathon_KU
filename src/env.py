@@ -1,5 +1,9 @@
-from sys import call_tracing
-from src.Group import Group, Vaccine, Vaccine_Shipment
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from Group import Group, Vaccine, Vaccine_Shipment
+
+
 import pandas as pd
 
 JOHNSON = Vaccine("Johnson", 0.95, 0.05, 0.01, 10)
