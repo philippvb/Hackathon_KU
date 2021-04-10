@@ -13,6 +13,7 @@ BIONTECH = Vaccine("Biontech", 0.95, 0.05, 0.01, 15)
 class VaccinationEnvironment:
     def __init__(self, config, vaccination_schedule):
         self.groups = []
+        self.group_sizes = config["group_sizes"]
         self.groups_history = []
         for index, group_name in enumerate(config["groups"]):
             susceptible = config["group_sizes"][index] - config["starting_cases"][index]
@@ -28,7 +29,7 @@ class VaccinationEnvironment:
                 possible_vaccines = [JOHNSON, BIONTECH]
             ))
 
-            self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "dead"]))
+            self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "deaths"]))
 
 
 
@@ -69,7 +70,7 @@ class VaccinationEnvironment:
     def save_step(self):
         info = self.get_info()
         for index, group in enumerate(self.groups):
-            self.groups_history[index] = self.groups_history[index].append(pd.DataFrame([info[group.name]], columns=["susceptible", "cases", "recovered", "dead"]), ignore_index=True)
+            self.groups_history[index] = self.groups_history[index].append(pd.DataFrame([info[group.name]], columns=["susceptible", "cases", "recovered", "deaths"]), ignore_index=True)
 
 
     def get_total_cases(self):
@@ -105,13 +106,16 @@ class VaccinationEnvironment:
     def get_groups(self):
         return self.groups
 
-    def plot(self):
+    def plot_ratio(self, key):
         plot_count = len(self.groups)
         fig, axs = plt.subplots(plot_count)
+        fig.suptitle(f"Ratio of {key}")
         for index, group in enumerate(self.groups):
-            print(self.groups_history[index]["susceptible"])
-            pd.Series.plot(self.groups_history[index]["susceptible"], ax = axs[index])
+            axs[index].set_title(group.name)
+            self.groups_history[index][key].divide(self.group_sizes[index]).plot(ax = axs[index])
+        plt.show()
     # plots current status
+
 
     def save(self):
         pass
