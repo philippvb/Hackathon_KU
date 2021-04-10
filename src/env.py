@@ -1,7 +1,8 @@
+from sys import call_tracing
 from src.Group import Group, Vaccine, Vaccine_Shipment
 import pandas as pd
 
-JOHNSON = Vaccine("Johnsonn", 0.95, 0.05, 0.01, 10)
+JOHNSON = Vaccine("Johnson", 0.95, 0.05, 0.01, 10)
 BIONTECH = Vaccine("Biontech", 0.95, 0.05, 0.01, 15)
 
 class VaccinationEnvironment:
@@ -24,7 +25,7 @@ class VaccinationEnvironment:
             self.groups_history.append(pd.DataFrame(["susceptible", "cases", "recovered", "dead"]))
 
 
-        self.vacination_schedule = vaccination_schedule
+        self.vaccination_schedule = vaccination_schedule
         self.total_people = sum(config["group_sizes"])
 
         self.time_step = 0
@@ -33,16 +34,29 @@ class VaccinationEnvironment:
         # add vacin shipping schedule
 
     def get_vaccines(self):
-        return [Vaccine_Shipment(globals()[vaccine_name.upper()], self.vacination_schedule[vaccine_name][index]) for index, vaccine_name in enumerate(self.vacination_schedule.keys())]
+        return [Vaccine_Shipment(globals()[vaccine_name.upper()], self.vaccination_schedule[vaccine_name][index]) for index, vaccine_name in enumerate(self.vaccination_schedule.keys())]
     # returns next vaccine objects
 
-    def step(self, vaccines):
+    def step(self, vaccines=None, check=True):
         ratio = self.get_total_cases()/self.total_people
-        # vaccines: list of tuples (group, vaccinationshipping)
-        for index, vaccine in enumerate(vaccines):
-            self.groups[index].step(ratio, vaccine)
+
+        # look if dim match
+        last_index = len(self.groups)
+        if len(vaccines) != last_index:
+            print("Warning: Mismatch between vaccination plan and groups.")
+            last_index = len(vaccines)
+
+        self.check_vaccination_plan(vaccines)
+
+        # do the actual step
+        for index, group in enumerate(self.groups):
+            if index >= last_index:
+                group.step(ratio)
+            else:
+                group.step(ratio, vaccines[index])
 
         self.save_step()
+        self.time_step += 1
 
     def save_step(self):
         info = self.get_info()
@@ -59,6 +73,24 @@ class VaccinationEnvironment:
             info[group.name] = [group.get_susceptible(), group.get_cases(), group.get_recovered(), group.get_deaths()]
         return info
     # returns general information like current rates for group ...
+
+    def get_vaccinatable(self):
+        vaccinatable = {}
+        for group in self.groups:
+            vaccinatable[group.name] = group.get_vaccinatable() # TODO: or store it as dict again??
+        return vaccinatable
+
+
+
+    def check_vaccination_plan(self, vaccination_plan):
+        vaccine_plan_sum = {name: 0 for name in self.vaccination_schedule.keys()}
+        for group_plan in vaccination_plan:
+            for group_vaccine_plan in group_plan:
+                vaccine_plan_sum[group_vaccine_plan.vaccine.name] = vaccine_plan_sum[group_vaccine_plan.vaccine.name] + group_vaccine_plan.first_vaccines + group_vaccine_plan.second_vaccines
+
+        for index,(vaccine_plan, vaccine_schedule) in enumerate(zip(vaccine_plan_sum.values(), self.vaccination_schedule.values())):
+            if vaccine_plan > vaccine_schedule[self.time_step]:
+                raise ValueError (f"You want to use {vaccine_plan - vaccine_schedule[self.time_step]} more vaccines that are currently availabe from {self.vaccination_schedule.keys()[index]}")
 
 
     def get_groups(self):

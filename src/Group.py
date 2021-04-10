@@ -25,13 +25,13 @@ class Group:
                 if shipment.first_vaccines > 0:
                     if not shipment.vaccine.name in self.in_process:
                         self.in_process[shipment.vaccine.name] = Processing_Group(self, 0, 0, 0, 0, shipment.vaccine)
-                    self.move(self.vac1_ready, self.in_process[shipment.vaccine.name], shipment.first_vaccines)
+                    self.move(self.vac1_ready, self.in_process[shipment.vaccine.name], min(shipment.first_vaccines, self.vac1_ready.susceptible))
 
                 # distribute the second vaccines
                 if shipment.second_vaccines > 0:
                     if not shipment.vaccine.name in self.done:
                         self.done[shipment.vaccine.name] = Subgroup(self, 0, 0, 0, 0, shipment.vaccine)
-                    self.move(self.vac2_ready[shipment.vaccine.name], self.done[shipment.vaccine.name], shipment.second_vaccines)
+                    self.move(self.vac2_ready[shipment.vaccine.name], self.done[shipment.vaccine.name], min(shipment.second_vaccines, self.vac2_ready[shipment.vaccine.name].susceptible))
 
 
         # manage subgroups
@@ -80,6 +80,13 @@ class Group:
         total_deaths += sum([subgroup.deaths for subgroup in list(self.vac2_ready.values())])
         total_deaths += sum([subgroup.deaths for subgroup in list(self.done.values())])
         return total_deaths
+
+    def get_vaccinatable(self):
+        vac2_ready_dict = {}
+        vac1_ready_susceptible = self.vac1_ready.susceptible
+        for subgroup_vac_2 in self.vac2_ready.values():
+            vac2_ready_dict[subgroup_vac_2.vaccine.name] = subgroup_vac_2.susceptible
+        return [vac1_ready_susceptible, vac2_ready_dict]
 
 class Subgroup:
     def __init__(self, parent, susceptible, infectious=0, recovered=0, severe_cases=0, vaccine=None):

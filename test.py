@@ -22,5 +22,10 @@ vacination_schedule = {
 
 env = VaccinationEnvironment(config, vacination_schedule)
 vaccines = env.get_vaccines()
+print(env.get_vaccinatable())
 
 vaccination_plan = (Vaccination_Plan(JOHNSON, 10, 0))
+for i in range(100):
+    env.step([[vaccination_plan]])
+
+
