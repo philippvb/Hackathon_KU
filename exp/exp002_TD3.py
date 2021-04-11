@@ -121,15 +121,15 @@ def training_loop(agent_config, env_config, vaccination_schedule):
 
 
 config = {
-    "groups": ["20s", "30s", "40s"],
-    "starting_cases": [3000, 500, 500],
-    "group_sizes": [10000, 10000, 1000],
-    "num_contacts": [5, 3, 3, 3],
-    "prob_transmission": [0.1]*3,
-    "prob_severe": [0.3, 0.1, 0.1],
-    "prob_death": [0.1]*3,
-    "prob_recovery": [0.1]*3,
-    "max_time_steps":100
+    "groups": ["20-40s", "40-60s", "60-80s"],
+    "starting_cases": [500, 500, 500],
+    "group_sizes": [10000, 10000, 10000],
+    "num_contacts": [6, 4, 2],
+    "prob_transmission": [0.3],
+    "prob_severe": [0.1, 0.3, 0.5],
+    "prob_death": [0.1, 0.3, 0.5],
+    "prob_recovery": [0.1, 0.05, 0.01],
+    "max_time_steps":365
 }
 
 new_config = {
