@@ -73,7 +73,8 @@ class VaccinationEnvironment:
         self.total_people = sum(config["group_sizes"])
         self.time_step = 0
 
-
+    def get_vaccine_options(self, name):
+        return globals()[name.upper()]
 
     def get_vaccines(self):
         """Gives to the vaccine shipment for the current timestep.
