@@ -87,7 +87,7 @@ def training_loop(agent_config, env_config, vaccination_schedule):
                 plan = Vaccination_Plan(JOHNSON, group_vac_1, group_vac_2)
                 vaccination_plan.append([plan])
             
-            info, done = env.step(vaccination_plan, False)
+            info, done = env.step(vaccination_plan, True)
             reward = -sum([values[1] for values in info.values()])
             episode_reward.append(reward)
 

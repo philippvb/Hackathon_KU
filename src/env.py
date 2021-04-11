@@ -46,6 +46,11 @@ class VaccinationEnvironment:
         # add vacin shipping schedule
 
     def reset(self, new_config=None):
+        """Resets the environment. If no new config is passed, uses current one.
+
+        Args:
+            new_config (dict, optional):A new config. Defaults to None.
+        """
         config = new_config if new_config else self.config
         self.groups = {}
         self.group_sizes = config["group_sizes"]
@@ -71,32 +76,57 @@ class VaccinationEnvironment:
 
 
     def get_vaccines(self):
+        """Gives to the vaccine shipment for the current timestep.
+
+        Returns:
+            list[Vaccine_Shipment]: List of vaccine shiments.
+        """
         return [Vaccine_Shipment(globals()[vaccine_name.upper()], self.vaccination_schedule[vaccine_name][index]) for index, vaccine_name in enumerate(self.vaccination_schedule.keys())]
     # returns next vaccine objects
 
     def step(self, vaccines=None, print_warnings=True, match_keyword=False):
+        """Does one environment step.
+
+        Args:
+            vaccines (dict[Vaccination_Plan] or list[Vaccination_Plan], optional): Dict or list of Vaccinationplan. Defaults to None.
+            print_warnings (bool, optional): Print warning if vaccines format is wrong. Defaults to True.
+            match_keyword (bool, optional): If true, enables keyword matching from vaccines to groups. Defaults to False.
+
+        Raises:
+            ValueError: If keywordmatching is used, but no dictionary is passed as vaccine.
+
+        Returns:
+            [type]: [description]
+        """
+
         ratio = self.get_total_cases()/self.total_people
 
-        # look if dim match
-        last_index = len(self.groups)
-        if len(vaccines) != last_index:
-            if print_warnings:
-                print("Warning: Mismatch between vaccination plan and groups.")
-            last_index = len(vaccines)
+        if vaccines:
+            # look if dim match
+            last_index = len(self.groups)
+            if len(vaccines) != last_index:
+                if print_warnings:
+                    print("Warning: Mismatch between vaccination plan and groups.")
+                last_index = len(vaccines)
 
-        self.check_vaccination_plan(vaccines)
+            self.check_vaccination_plan(vaccines)
 
-        # do the actual step
-        if match_keyword:
-            for group_name, vaccine in vaccines.items:
-                self.groups[group_name].step(vaccine)
+            # do the actual step
+            if match_keyword:
+                if not isinstance(vaccines, dict):
+                    raise ValueError("If matching by keyword is used, you must pass a dictionary")
+                for group_name, vaccine in vaccines.items:
+                    self.groups[group_name].step(vaccine)
+            else:
+                for index, group in enumerate(self.groups.values()):
+                    if index >= last_index:
+                        group.step(ratio)
+                    else:
+                        group.step(ratio, vaccines[index])
         else:
-            for index, group in enumerate(self.groups.values()):
-                if index >= last_index:
-                    group.step(ratio)
-                else:
-                    group.step(ratio, vaccines[index])
-                
+            for group in self.groups.values():
+                group.step(ratio)
+                    
 
         self.save_step()
         self.time_step += 1

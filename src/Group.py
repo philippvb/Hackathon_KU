@@ -1,8 +1,25 @@
 import random
 
 class Group:
+    """Represents a group of people.
+    """
     def __init__(self, name, num_contacts, prob_transmission, prob_severe, prob_death, prob_recovery, susceptible,
                  infectious=0, recovered=0, severe_cases=0, possible_vaccines=[]):
+        """Init method
+
+        Args:
+            name (string): Name of the group
+            num_contacts (int): Number of contacts and individuum sees per timestep.
+            prob_transmission (float): Probability of transmission from an infectious to susceptible person.
+            prob_severe (float): Probability of a infection getting severe per timestep.
+            prob_death (float): Probability of a severe case dying per timestep.
+            prob_recovery (float): Probability of a severe case recovering per timestep.
+            susceptible (int): Number of susceptible people.
+            infectious (int, optional): Number of infectious people. Defaults to 0.
+            recovered (int, optional): Number of recovered people. Defaults to 0.
+            severe_cases (int, optional): Number of severe cases. Defaults to 0.
+            possible_vaccines (list, optional): List of all possible vaccines that could be used.. Defaults to [].
+        """
         # immutable group variables
         self.name = name
         self.prob_transmission_group = prob_transmission
@@ -17,13 +34,19 @@ class Group:
         self.vac2_ready = {}
         self.done = {}
         for vaccine in possible_vaccines:
-            self.in_process[vaccine.name] = Processing_Group(self, 0, 0, 0, 0, vaccine)
+            self.in_process[vaccine.name] = Processing_Group(self, susceptible=0, vaccine=vaccine)
             self.vac2_ready[vaccine.name] = Subgroup(self, 0, 0, 0, 0, vaccine)
             self.done[vaccine.name] = Subgroup(self, 0, 0, 0, 0, vaccine)
 
 
 
     def step(self, ratio_cases, vaccination_plan=None):
+        """Does one timestep with the given vaccine.
+
+        Args:
+            ratio_cases (float): The case ratio in the overall population
+            vaccination_plan (list[Vaccination_Plan], optional): list of vaccines given at this timestep. Defaults to None.
+        """
         # vaccinate
         if vaccination_plan:
             for shipment in vaccination_plan:
@@ -48,6 +71,16 @@ class Group:
         return
 
     def move(self, in_group, out_group, number):
+        """Moves a given number of susceptible people from one to another group
+
+        Args:
+            in_group (Subgroup): Group to move from
+            out_group (Subgroup): Group to move to
+            number (int): Number of people
+
+        Raises:
+            Exception: If number > in_group.susceptible
+        """
         if number > in_group.susceptible:
             raise Exception
         in_group.susceptible -= number
@@ -62,7 +95,7 @@ class Group:
 
 
 
-    # get methods for summary
+    # get methods which collect infos of all subgroups
 
     def get_cases(self):
         total_cases = self.vac1_ready.get_cases()
@@ -93,7 +126,6 @@ class Group:
         return total_deaths
 
 
-    # getpossible vaccinatable count
 
     def get_vaccinatable(self):
         vac2_ready_dict = {}
@@ -103,7 +135,19 @@ class Group:
         return [vac1_ready_susceptible, vac2_ready_dict]
 
 class Subgroup:
+    """Represents a subgroup of a group, for example all people who are vaccinated once
+    """
     def __init__(self, parent, susceptible, infectious=0, recovered=0, severe_cases=0, vaccine=None):
+        """Init method
+
+        Args:
+            parent (group): The underlying group, used to get group variables like prob_transmission.
+            susceptible (int): Number of susceptible people.
+            infectious (int, optional): Number of infectious people. Defaults to 0.
+            recovered (int, optional): Number of recovered people. Defaults to 0.
+            severe_cases (int, optional): Number of severe cases. Defaults to 0.
+            vaccine ([type], optional): The vaccine to use. Defaults to None.
+        """
         # variational variables
         self.susceptible= susceptible
         self.infectious = infectious
@@ -120,7 +164,12 @@ class Subgroup:
 
         self.parent = parent
 
-    def step(self, ratio_cases, *args, **kwargs):
+    def step(self, ratio_cases):
+        """Does one environment step
+
+        Args:
+            ratio_cases (float): The ratio of cases in the whole population.
+        """
         new_infectious = int(self.susceptible * self.parent.num_contacts * self.prob_transmission + ratio_cases)
         new_severe_cases = int(self.prob_severe * self.infectious)
         new_deaths = int(self.prob_death * self.severe_cases)
@@ -142,9 +191,22 @@ class Subgroup:
 
 
 class Processing_Group(Subgroup):
-    def __init__(self, parent, susceptible, infectious=0, recovered=0, severe_cases=0, vaccine=None):
+    """Represents a group of people who have recently been vaccinated and are in
+    incubation phase until the vaccine fully works.
+    Inherits from Subgroup
+    """
+    def __init__(self, parent, susceptible, vaccine, infectious=0, recovered=0, severe_cases=0, processing_discount=1.2):
+        """Init method. For not specified arguments, see subgroup
+
+        Args:
+            vaccine (Vaccine): The vaccine to get
+            processing_discount (float, optional): The penalty factor for the incubation time,. Defaults to 1.2.
+        """
         super().__init__(parent, susceptible, infectious, recovered, severe_cases, vaccine)
         self.history = [0] * vaccine.processing_time
+        self.prob_transmission = processing_discount * self.prob_transmission
+        self.prob_severe = processing_discount * self.prob_severe
+        self.prob_death = processing_discount * self.prob_death
         self.last_added = 0
 
     def add_people(self, num):
@@ -163,17 +225,24 @@ class Processing_Group(Subgroup):
 
 
 class Vaccination_Plan:
+    """A vaccination plan or a timestep, contains info about how many vaccines
+are handed to first and second time vaccined people in the group it is given to.
+    """
     def __init__(self, vaccine, first_vaccines, second_vaccines):
         self.vaccine = vaccine
         self.first_vaccines = first_vaccines
         self.second_vaccines = second_vaccines
 
 class Vaccine_Shipment:
+    """A vaccine shipment that arrives and can be distributed
+    """
     def __init__(self, vaccine, num):
         self.num = num
         self.vaccine = vaccine
 
 class Vaccine:
+    """Instance of one vaccine
+    """
     def __init__(self, name, effectiveness, prob_severe, prob_death, processing_time):
         self.name = name
         self.effectiveness = effectiveness
