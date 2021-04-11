@@ -115,8 +115,8 @@ class VaccinationEnvironment:
             if match_keyword:
                 if not isinstance(vaccines, dict):
                     raise ValueError("If matching by keyword is used, you must pass a dictionary")
-                for group_name, vaccine in vaccines.items:
-                    self.groups[group_name].step(vaccine)
+                for group_name, vaccine in vaccines.items():
+                    self.groups[group_name].step(ratio, vaccine)
             else:
                 for index, group in enumerate(self.groups.values()):
                     if index >= last_index:
@@ -166,6 +166,8 @@ class VaccinationEnvironment:
 
     def check_vaccination_plan(self, vaccination_plan):
         vaccine_plan_sum = {name: 0 for name in self.vaccination_schedule.keys()}
+        if isinstance(vaccination_plan, dict):
+            vaccination_plan = vaccination_plan.values()
         for group_plan in vaccination_plan:
             for group_vaccine_plan in group_plan:
                 vaccine_plan_sum[group_vaccine_plan.vaccine.name] = vaccine_plan_sum[group_vaccine_plan.vaccine.name] + group_vaccine_plan.first_vaccines + group_vaccine_plan.second_vaccines

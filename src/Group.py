@@ -170,7 +170,7 @@ class Subgroup:
         Args:
             ratio_cases (float): The ratio of cases in the whole population.
         """
-        new_infectious = int(self.susceptible * self.parent.num_contacts * self.prob_transmission + ratio_cases)
+        new_infectious = int(self.susceptible * self.parent.num_contacts * self.prob_transmission * ratio_cases)
         new_severe_cases = int(self.prob_severe * self.infectious)
         new_deaths = int(self.prob_death * self.severe_cases)
         new_recoveries_inf = int(self.prob_recovery * self.infectious)
