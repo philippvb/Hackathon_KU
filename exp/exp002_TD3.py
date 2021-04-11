@@ -162,11 +162,11 @@ config = {
     "groups": ["20s", "30s", "40s"],
     "starting_cases": [200, 100, 100],
     "group_sizes": [1000, 1000, 1000],
-    "num_contacts": 4,
-    "prob_transmission": 0.1,
-    "prob_severe": 0.1,
-    "prob_death": 0.1,
-    "prob_recovery": 0.1,
+    "num_contacts": [4]*3,
+    "prob_transmission": [0.1]*3,
+    "prob_severe": [0.1]*3,
+    "prob_death": [0.1]*3,
+    "prob_recovery": [0.1]*3,
     "max_time_steps":100
 }
 

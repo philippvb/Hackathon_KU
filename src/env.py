@@ -14,14 +14,13 @@ BIONTECH = Vaccine("Biontech", 0.95, 0.05, 0.01, 15)
 
 class VaccinationEnvironment:
     def __init__(self, config, vaccination_schedule):
-        self.groups = []
+        self.groups = {}
         self.group_sizes = config["group_sizes"]
         self.groups_history = []
         self.possible_vaccines = [globals()[name.upper()] for name in vaccination_schedule.keys()]
         for index, group_name in enumerate(config["groups"]):
             susceptible = config["group_sizes"][index] - config["starting_cases"][index]
-            self.groups.append(
-                Group(group_name,
+            self.groups[group_name]= Group(group_name,
                 config["num_contacts"][index],
                 config["prob_transmission"][index],
                 config["prob_severe"][index], 
@@ -30,7 +29,7 @@ class VaccinationEnvironment:
                 susceptible,
                 config["starting_cases"][index],
                 possible_vaccines = self.possible_vaccines
-            ))
+            )
 
             self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "deaths"]))
 
@@ -48,22 +47,21 @@ class VaccinationEnvironment:
 
     def reset(self, new_config=None):
         config = new_config if new_config else self.config
-        self.groups = []
+        self.groups = {}
         self.group_sizes = config["group_sizes"]
         self.groups_history = []
         for index, group_name in enumerate(config["groups"]):
             susceptible = config["group_sizes"][index] - config["starting_cases"][index]
-            self.groups.append(
-                Group(group_name,
-                config["num_contacts"],
-                config["prob_transmission"],
-                config["prob_severe"], 
-                config["prob_death"],
-                config["prob_recovery"],
+            self.groups[group_name]= Group(group_name,
+                config["num_contacts"][index],
+                config["prob_transmission"][index],
+                config["prob_severe"][index], 
+                config["prob_death"][index],
+                config["prob_recovery"][index],
                 susceptible,
                 config["starting_cases"][index],
                 possible_vaccines = self.possible_vaccines
-            ))
+            )
 
             self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "deaths"]))
 
@@ -76,7 +74,7 @@ class VaccinationEnvironment:
         return [Vaccine_Shipment(globals()[vaccine_name.upper()], self.vaccination_schedule[vaccine_name][index]) for index, vaccine_name in enumerate(self.vaccination_schedule.keys())]
     # returns next vaccine objects
 
-    def step(self, vaccines=None, print_warnings=True):
+    def step(self, vaccines=None, print_warnings=True, match_keyword=False):
         ratio = self.get_total_cases()/self.total_people
 
         # look if dim match
@@ -89,11 +87,16 @@ class VaccinationEnvironment:
         self.check_vaccination_plan(vaccines)
 
         # do the actual step
-        for index, group in enumerate(self.groups):
-            if index >= last_index:
-                group.step(ratio)
-            else:
-                group.step(ratio, vaccines[index])
+        if match_keyword:
+            for group_name, vaccine in vaccines.items:
+                self.groups[group_name].step(vaccine)
+        else:
+            for index, group in enumerate(self.groups.values()):
+                if index >= last_index:
+                    group.step(ratio)
+                else:
+                    group.step(ratio, vaccines[index])
+                
 
         self.save_step()
         self.time_step += 1
@@ -105,27 +108,27 @@ class VaccinationEnvironment:
 
     def save_step(self):
         info = self.get_info()
-        for index, group in enumerate(self.groups):
-            self.groups_history[index] = self.groups_history[index].append(pd.DataFrame([info[group.name]], columns=["susceptible", "cases", "recovered", "deaths"]), ignore_index=True)
+        for index, group_name in enumerate(self.groups.keys()):
+            self.groups_history[index] = self.groups_history[index].append(pd.DataFrame([info[group_name]], columns=["susceptible", "cases", "recovered", "deaths"]), ignore_index=True)
 
 
     def get_total_cases(self):
-        return sum([group.get_cases() for group in self.groups])
+        return sum([group.get_cases() for group in self.groups.values()])
     # vaccines
 
     def get_cases(self):
-        return {group.name: [group.get_cases_vac1_ready()] + group.get_cases_vac2_ready() for group in self.groups}
+        return {group.name: [group.get_cases_vac1_ready()] + group.get_cases_vac2_ready() for group in self.groups.values()}
 
     def get_info(self, header=True):
         info={"description": "The data is sorted by [susceptible, active_cases, recovered, deaths]"} if header else {}
-        for group in self.groups:
+        for group in self.groups.values():
             info[group.name] = [group.get_susceptible(), group.get_cases(), group.get_recovered(), group.get_deaths()]
         return info
     # returns general information like current rates for group ...
 
     def get_vaccinatable(self):
         vaccinatable = {}
-        for group in self.groups:
+        for group in self.groups.values():
             vaccinatable[group.name] = group.get_vaccinatable() # TODO: or store it as dict again??
         return vaccinatable
 
@@ -149,7 +152,7 @@ class VaccinationEnvironment:
         plot_count = len(self.groups)
         fig, axs = plt.subplots(plot_count)
         fig.suptitle(f"Ratio of {key}")
-        for index, group in enumerate(self.groups):
+        for index, group in enumerate(self.groups.values()):
             axs[index].set_title(group.name)
             self.groups_history[index][key].divide(self.group_sizes[index]).plot(ax = axs[index])
         plt.show()
@@ -157,8 +160,8 @@ class VaccinationEnvironment:
 
 
     def save(self, save_dir):
-        for group_history, group in zip(self.groups_history, self.groups):
-            group_history.to_csv(save_dir + f"/{group.name}.csv" , sep=",", index=False)
+        for group_history, group_name in zip(self.groups_history, self.groups.keys()):
+            group_history.to_csv(save_dir + f"/{group_name}.csv" , sep=",", index=False)
         # saves history
 
 
