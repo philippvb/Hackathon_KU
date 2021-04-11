@@ -16,7 +16,7 @@ def training_loop(agent_config, env_config, vaccination_schedule):
     action_dim = len(env_config["groups"]) * 2 * len(vaccination_schedule)
     state_dim = len(env_config["groups"]) +  len(vaccination_schedule) * len(env_config["groups"]) + len(vaccination_schedule)
     batch_size = 100
-    episodes = 100
+    episodes = 150
     max_iterations = env_config["max_time_steps"]
 
 
@@ -88,7 +88,7 @@ def training_loop(agent_config, env_config, vaccination_schedule):
                 vaccination_plan.append([plan])
             
             info, done = env.step(vaccination_plan, True)
-            reward = -sum([values[1] for values in info.values()])
+            reward = sum([values[1] for values in info.values()])
             episode_reward.append(reward)
 
             next_state = []
@@ -120,60 +120,35 @@ def training_loop(agent_config, env_config, vaccination_schedule):
 
 
 
-        
-
-
-        
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 config = {
     "groups": ["20s", "30s", "40s"],
-    "starting_cases": [200, 100, 100],
-    "group_sizes": [1000, 1000, 1000],
-    "num_contacts": [4]*3,
+    "starting_cases": [3000, 500, 500],
+    "group_sizes": [10000, 10000, 1000],
+    "num_contacts": [5, 3, 3, 3],
     "prob_transmission": [0.1]*3,
-    "prob_severe": [0.1]*3,
+    "prob_severe": [0.3, 0.1, 0.1],
     "prob_death": [0.1]*3,
     "prob_recovery": [0.1]*3,
     "max_time_steps":100
 }
 
+new_config = {
+    "groups": ["20s", "30s"],
+    "starting_cases": [3000, 500],
+    "group_sizes": [10000, 10000],
+    "num_contacts": [5, 2],
+    "prob_transmission": [0.2, 0.1],
+    "prob_severe": [0.3, 0.1],
+    "prob_death": [0.1]*2,
+    "prob_recovery": [0.1]*2,
+    "max_time_steps":100
+}
+
+
 
 vacination_schedule = {
-    "Johnson": [100]*1000,
+    "Johnson": [300]*1000,
     #"Biontech": [0]*100 + [15]*900
 }
 
-training_loop(None, config, vacination_schedule)
+training_loop(None, new_config, vacination_schedule)
