@@ -17,6 +17,7 @@ class VaccinationEnvironment:
         self.groups = []
         self.group_sizes = config["group_sizes"]
         self.groups_history = []
+        self.possible_vaccines = [globals()[name.upper()] for name in vaccination_schedule.keys()]
         for index, group_name in enumerate(config["groups"]):
             susceptible = config["group_sizes"][index] - config["starting_cases"][index]
             self.groups.append(
@@ -28,7 +29,7 @@ class VaccinationEnvironment:
                 config["prob_recovery"],
                 susceptible,
                 config["starting_cases"][index],
-                possible_vaccines = [JOHNSON]
+                possible_vaccines = self.possible_vaccines
             ))
 
             self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "deaths"]))
@@ -61,7 +62,7 @@ class VaccinationEnvironment:
                 config["prob_recovery"],
                 susceptible,
                 config["starting_cases"][index],
-                possible_vaccines = [JOHNSON]
+                possible_vaccines = self.possible_vaccines
             ))
 
             self.groups_history.append(pd.DataFrame(columns=["susceptible", "cases", "recovered", "deaths"]))
