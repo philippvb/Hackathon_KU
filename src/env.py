@@ -22,11 +22,11 @@ class VaccinationEnvironment:
             susceptible = config["group_sizes"][index] - config["starting_cases"][index]
             self.groups.append(
                 Group(group_name,
-                config["num_contacts"],
-                config["prob_transmission"],
-                config["prob_severe"], 
-                config["prob_death"],
-                config["prob_recovery"],
+                config["num_contacts"][index],
+                config["prob_transmission"][index],
+                config["prob_severe"][index], 
+                config["prob_death"][index],
+                config["prob_recovery"][index],
                 susceptible,
                 config["starting_cases"][index],
                 possible_vaccines = self.possible_vaccines
@@ -156,8 +156,9 @@ class VaccinationEnvironment:
     # plots current status
 
 
-    def save(self):
-        pass
+    def save(self, save_dir):
+        for group_history, group in zip(self.groups_history, self.groups):
+            group_history.to_csv(save_dir + f"/{group.name}.csv" , sep=",", index=False)
         # saves history
 
 

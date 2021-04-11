@@ -11,6 +11,7 @@ config = {
     "prob_severe": 0.1,
     "prob_death": 0.1,
     "prob_recovery": 0.1,
+    "max_time_steps":110
 }
 
 
@@ -28,10 +29,13 @@ vaccination_plan = Vaccination_Plan(JOHNSON, 100, 0)
 
 for i in range(100):
     env.step([[vaccination_plan]], print_warnings=False)
+    print(env.groups_history[0])
     #print(env.get_info(header=False))
-    print(env.get_cases())
+    #print(env.get_cases())
 
 #env.plot_ratio("deaths")
 
 # [group1, grou2, ...]
 # group1 = [vac1, vac2]
+
+env.save("P:/Dokumente/3 Uni/WiSe2021/Hackathon/Hackathon_KU")
