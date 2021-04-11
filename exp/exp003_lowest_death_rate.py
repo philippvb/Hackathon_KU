@@ -9,19 +9,18 @@ def get_prob(elt):
 
 
 groups = {
-    "groups": ["20s", "30s", "40s"],
-    "starting_cases": [100, 100, 100],
-    "group_sizes": [1000, 1000, 1000],
-    "num_contacts": [4, 3, 2],
-    "prob_transmission": [0.1, 0.3, 0.2],
-    "prob_severe": [0.1, 0.2, 0.3],
-    "prob_death": [0.05, 0.1, 0.2],
-    "prob_recovery": [0.4, 0.3, 0.2],
-    "max_time_steps": 365,
+    "groups": ["20-40s", "40-60s", "60-80s"],
+    "starting_cases": [100, 50, 50],
+    "group_sizes": [10000, 10000, 10000],
+    "num_contacts": [4, 2, 1],
+    "prob_transmission": [0.1]*3,
+    "prob_severe": [0.1, 0.3, 0.5],
+    "prob_death": [0.1, 0.3, 0.5],
+    "prob_recovery": [0.1, 0.05, 0.01],
+    "max_time_steps":150
 }
 vaccination_schedule = {
-    "Johnson": [10]*1000,
-    "Biontech": [0]*100 + [15]*900
+    "Johnson": [300]*1000,
 }
 env = Hackathon_KU.src.env.VaccinationEnvironment(groups, vaccination_schedule)
 # ------------------------------------------------------------------------------------------------------------
@@ -92,3 +91,4 @@ for a in range(100):
     env.step(plan, match_keyword=True)
     # ------------------------------------------------------------------------------------------------------------
 
+env.plot_ratio("deaths")
